@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>每日随记 · 事项与日记</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        if (window.tailwind) tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {
+                colors: { primary: { 50:'#f0f9ff',100:'#e0f2fe',500:'#0284c7',600:'#0284c7',700:'#0369a1' } },
+                fontFamily: { sans: ['Inter','system-ui','-apple-system','sans-serif'] }
+            }}
+        }
+    </script>
+    <style>
+        html { font-size: 16px; }
+        .detail-switch { display:flex; gap:6px; padding:5px; background:#f1f5f9; border-radius:14px; }
+        .dark .detail-switch { background:#0f172a; }
+        .detail-tab { flex:1; border:0; border-radius:10px; padding:11px 8px; font-size:13px; font-weight:600; color:#64748b; background:transparent; transition:.2s; }
+        .detail-tab i { margin-right:5px; }
+        .detail-tab.active { color:#0369a1; background:#fff; box-shadow:0 1px 4px #0f172a18; }
+        .dark .detail-tab.active { color:#7dd3fc; background:#1e293b; }
+        .detail-panel.hidden { display:none; }
+        body { background: #edf3f7; }
+        #app { max-width: 680px; }
+        nav { max-width: 680px !important; }
+        main { padding: 22px !important; }
+        header { padding: 18px 22px !important; }
+        .nav-btn { min-height: 56px; min-width: 65px; border-radius: 14px; padding: 6px 10px; }
+        .nav-btn.text-sky-500 { background: #e0f2fe; }
+        .dark .nav-btn.text-sky-500 { background: #0c2940; }
+        textarea { line-height: 1.85 !important; }
+        input, select, textarea { font-size: 16px !important; }
+        @media (min-width: 481px) { input, select, textarea { font-size: 14px !important; } }
+        button, select, input { touch-action: manipulation; }
+        button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #0284c7; outline-offset: 2px; }
+        @media (max-width: 480px) {
+            main { padding: 14px !important; }
+            header { padding: 14px !important; }
+        }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        .tab-content { display: none; opacity: 0; transition: opacity 0.2s; }
+        .tab-content.active { display: block; opacity: 1; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 1rem); }
+
+        /* ===== 朋友圈风格时光轴 ===== */
+        .moments-item {
+            padding: 14px 0;
+            border-bottom: 1px solid #eef2f6;
+            transition: background-color .15s;
+        }
+        .moments-item:last-child { border-bottom: none; }
+        .dark .moments-item { border-bottom-color: #1a2436; }
+        .moments-avatar {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex-shrink: 0; color: #fff; font-weight: 700;
+            background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+            box-shadow: 0 3px 8px rgba(37,99,235,0.22);
+        }
+        .moments-avatar .m-month { font-size: 9px; letter-spacing: .5px; opacity: .92; line-height: 1; font-weight: 600; }
+        .moments-avatar .m-day { font-size: 18px; line-height: 1; font-weight: 800; margin-top: 1px; }
+        .moments-name { font-size: 15px; font-weight: 700; color: #2563eb; }
+        .dark .moments-name { color: #60a5fa; }
+        .moments-text {
+            font-size: 15px; line-height: 1.7; color: #1e293b;
+            white-space: pre-line; overflow-wrap: anywhere; margin-top: 4px;
+        }
+        .dark .moments-text { color: #e2e8f0; }
+        .moments-tag { display: inline-flex; align-items: center; font-size: 13px; font-weight: 600; color: #d97706; margin-top: 4px; }
+        .dark .moments-tag { color: #fbbf24; }
+        .moments-imgs { margin-top: 8px; display: grid; gap: 5px; }
+        .moments-imgs.col-1 { grid-template-columns: minmax(0, 62%); }
+        .moments-imgs.col-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .moments-imgs.col-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .moments-imgs img {
+            width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+            border-radius: 8px; cursor: pointer; background: #f1f5f9;
+            transition: opacity .15s;
+        }
+        .moments-imgs.col-1 img { aspect-ratio: auto; max-height: 240px; }
+        .moments-imgs img:hover { opacity: .92; }
+        .moments-foot {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 8px; font-size: 12px; color: #94a3b8;
+        }
+        .moments-actions { display: flex; align-items: center; gap: 2px; }
+        .moments-actions button {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; border-radius: 8px;
+            color: #94a3b8; transition: all .15s;
+        }
+        .moments-actions button:hover { background: #f1f5f9; color: #0284c7; }
+        .dark .moments-actions button:hover { background: #1e293b; color: #7dd3fc; }
+        .moments-actions button.btn-del:hover { color: #f43f5e; }
+
+        /* ===== 日历格子 ===== */
+        #calendar-days { gap: 4px; }
+        .cal-cell {
+            position: relative; min-height: 76px; padding: 5px 6px 4px;
+            border-radius: 12px; display: flex; flex-direction: column;
+            cursor: pointer; transition: transform .12s, box-shadow .15s, background-color .15s;
+            overflow: hidden; border: 1px solid #e2e8f0; background: #ffffff;
+        }
+        .dark .cal-cell { border-color: #1e293b; background: #0f172a; }
+        .cal-cell:active { transform: scale(0.96); }
+        .cal-cell.is-today { border-color: #7dd3fc; background: #f0f9ff; }
+        .dark .cal-cell.is-today { border-color: #0c4a6e; background: #082f49; }
+        .cal-cell.is-selected {
+            background: linear-gradient(150deg, #0ea5e9, #0284c7);
+            border-color: #0284c7;
+            box-shadow: 0 3px 10px rgba(2,132,199,.35);
+        }
+        .cal-cell.is-empty { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
+        .cal-cell-top { display: flex; align-items: flex-start; justify-content: space-between; line-height: 1; }
+        .cal-day-num { font-size: 15px; font-weight: 700; color: #334155; letter-spacing: -0.3px; line-height: 1; }
+        .dark .cal-day-num { color: #cbd5e1; }
+        .cal-cell.is-today .cal-day-num { color: #0284c7; }
+        .dark .cal-cell.is-today .cal-day-num { color: #38bdf8; }
+        .cal-cell.is-selected .cal-day-num { color: #fff; }
+        .cal-img-badge { font-size: 10px; font-weight: 700; line-height: 1; color: #a855f7; padding: 1px 2px; letter-spacing: -0.5px; }
+        .dark .cal-img-badge { color: #c084fc; }
+        .cal-cell.is-selected .cal-img-badge { color: #f5d0fe; }
+        .cal-cell-bottom { display: flex; flex-direction: column; gap: 4px; margin-top: auto; padding-top: 4px; }
+        .cal-todo-bar { height: 4px; border-radius: 2px; background: rgba(100, 116, 139, 0.18); overflow: hidden; position: relative; }
+        .dark .cal-todo-bar { background: rgba(148, 163, 184, 0.18); }
+        .cal-todo-bar > span { display: block; height: 100%; background: #0ea5e9; border-radius: 2px; transition: width .25s ease; }
+        .cal-todo-bar > span.all-done { background: linear-gradient(90deg, #10b981, #059669); }
+        .cal-cell.is-selected .cal-todo-bar { background: rgba(255,255,255,0.28); }
+        .cal-cell.is-selected .cal-todo-bar > span { background: #fff; }
+        .cal-journal-chip { display: flex; align-items: center; gap: 3px; font-size: 10px; line-height: 1.2; font-weight: 600; color: #b45309; min-width: 0; }
+        .dark .cal-journal-chip { color: #fbbf24; }
+        .cal-journal-chip .chip-dot { width: 4px; height: 4px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+        .cal-journal-chip .chip-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.2px; }
+        .cal-journal-chip.multi { color: #d97706; }
+        .cal-cell.is-selected .cal-journal-chip { color: #fef3c7; }
+        .cal-cell.is-selected .cal-journal-chip .chip-dot { background: #fde68a; }
+
+        /* ===== 事项编辑弹窗：优先级分段按钮 ===== */
+        .prio-seg {
+            flex: 1;
+            padding: 10px 6px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            transition: all .18s;
+            cursor: pointer;
+            line-height: 1.1;
+        }
+        .dark .prio-seg { background: #0f172a; border-color: #1e293b; color: #94a3b8; }
+        .prio-seg .prio-icon { font-size: 15px; }
+        .prio-seg.active[data-prio="low"] { background: #f1f5f9; border-color: #64748b; color: #334155; }
+        .dark .prio-seg.active[data-prio="low"] { background: #1e293b; border-color: #64748b; color: #e2e8f0; }
+        .prio-seg.active[data-prio="medium"] { background: #e0f2fe; border-color: #0284c7; color: #0369a1; }
+        .dark .prio-seg.active[data-prio="medium"] { background: #082f49; border-color: #0284c7; color: #38bdf8; }
+        .prio-seg.active[data-prio="high"] { background: #fee2e2; border-color: #ef4444; color: #dc2626; }
+        .dark .prio-seg.active[data-prio="high"] { background: #450a0a; border-color: #dc2626; color: #f87171; }
+
+        /* ===== 事项编辑弹窗：分类芯片 ===== */
+        .cat-chip {
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            display: inline-flex; align-items: center; gap: 5px;
+            transition: all .15s;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .dark .cat-chip { background: #0f172a; border-color: #1e293b; color: #94a3b8; }
+        .cat-chip.active { background: #e0f2fe; border-color: #0284c7; color: #0369a1; }
+        .dark .cat-chip.active { background: #082f49; border-color: #0284c7; color: #38bdf8; }
+        .cat-chip i { font-size: 12px; }
+
+        /* ===== 搜索结果卡片的优先级视觉 ===== */
+        .result-card {
+            position: relative;
+            padding: 14px 14px 14px 18px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            overflow: hidden;
+            transition: background-color .15s;
+        }
+        .dark .result-card { background: #0f172a; border-color: #1e293b; }
+        .result-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: #cbd5e1;
+        }
+        .result-card.prio-high::before { background: linear-gradient(180deg, #f43f5e, #e11d48); }
+        .result-card.prio-medium::before { background: linear-gradient(180deg, #0ea5e9, #0284c7); }
+        .result-card.prio-low::before { background: linear-gradient(180deg, #cbd5e1, #94a3b8); }
+
+        .result-card.prio-high { border-color: #fecdd3; background: linear-gradient(90deg, #fff1f2 0%, #f8fafc 30%); }
+        .dark .result-card.prio-high { border-color: #4c0519; background: linear-gradient(90deg, #1e0a0e 0%, #0f172a 30%); }
+
+        /* 徽章 */
+        .badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.4;
+            letter-spacing: -0.1px;
+            white-space: nowrap;
+        }
+        .badge-prio-high { background: #fee2e2; color: #dc2626; }
+        .dark .badge-prio-high { background: #450a0a; color: #f87171; }
+        .badge-prio-medium { background: #e0f2fe; color: #0369a1; }
+        .dark .badge-prio-medium { background: #082f49; color: #38bdf8; }
+        .badge-prio-low { background: #f1f5f9; color: #64748b; }
+        .dark .badge-prio-low { background: #1e293b; color: #94a3b8; }
+        .badge-cat { background: #f1f5f9; color: #64748b; }
+        .dark .badge-cat { background: #1e293b; color: #94a3b8; }
+        .badge-cat i { font-size: 9px; }
+
+        /* 优先级筛选 chips */
+        .pf-chip {
+            padding: 6px 11px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1.5px solid transparent;
+            transition: all .15s;
+            display: inline-flex; align-items: center; gap: 4px;
+            white-space: nowrap;
+        }
+        .dark .pf-chip { background: #0f172a; color: #94a3b8; }
+        .pf-chip.active { background: #0284c7; color: #fff; border-color: #0284c7; }
+        .pf-chip.active.pf-high { background: #e11d48; border-color: #e11d48; color: #fff; }
+        .pf-chip.active.pf-medium { background: #0284c7; border-color: #0284c7; color: #fff; }
+        .pf-chip.active.pf-low { background: #64748b; border-color: #64748b; color: #fff; }
+
+        /* ===== 字号微调 ===== */
+        .nav-btn span { font-size: 12px !important; font-weight: 600; }
+        .nav-btn i { font-size: 19px !important; }
+        header h1 { font-size: 17px !important; }
+        #header-date { font-size: 12px !important; }
+        #calendar-month-label { font-size: 16px !important; }
+        #year-select { font-size: 14px !important; }
+        .text-\[11px\] { font-size: 13px !important; }
+        .text-\[10px\] { font-size: 12px !important; }
+        #cal-journal-entries-list p { font-size: 15px !important; line-height: 1.8 !important; }
+        #cal-detail-item-list .text-xs { font-size: 15px !important; }
+        #cal-detail-item-list .text-\[11px\] { font-size: 13.5px !important; line-height: 1.65 !important; }
+        #search-results-list .text-xs { font-size: 15px !important; }
+        #search-results-list .text-\[11px\] { font-size: 13px !important; }
+        button { font-size: 14px; }
+        .detail-tab { font-size: 13.5px !important; }
+        label { font-size: 13px !important; }
+        #tab-settings .text-xs { font-size: 14.5px !important; }
+        #tab-settings .text-\[10px\] { font-size: 12.5px !important; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col font-sans transition-colors duration-200">
+
+<div id="app" class="max-w-md w-full mx-auto min-h-screen flex flex-col bg-white dark:bg-slate-950 shadow-xl relative pb-20">
+
+    <header class="sticky top-0 z-20 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 rounded-xl bg-sky-500 flex items-center justify-center text-white font-bold shadow-md shadow-sky-500/20">
+                <i class="fa-solid fa-book-open text-base"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold leading-tight">每日图文随记</h1>
+                <p id="header-date" class="text-[11px] text-slate-500 dark:text-slate-400">加载中...</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-1">
+            <button onclick="goToToday()" class="px-3 py-1.5 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/60 rounded-lg hover:bg-sky-100 transition-colors">今天</button>
+            <button id="btn-theme" onclick="toggleTheme()" class="p-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                <i class="fa-solid fa-moon text-slate-600 dark:hidden"></i>
+                <i class="fa-solid fa-sun text-amber-400 hidden dark:block"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 p-4 overflow-y-auto">
+
+        <!-- 月历 -->
+        <section id="tab-calendar" class="tab-content active space-y-4">
+            <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-900 p-2.5 rounded-2xl">
+                <button onclick="changeMonth(-1)" class="p-2.5 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300">
+                    <i class="fa-solid fa-chevron-left text-sm"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <select id="year-select" onchange="handleYearSelect(this.value)" class="bg-white dark:bg-slate-800 font-bold text-xs text-slate-800 dark:text-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 outline-none"></select>
+                    <span id="calendar-month-label" class="font-bold text-sm">10月</span>
+                </div>
+                <button onclick="changeMonth(1)" class="p-2.5 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300">
+                    <i class="fa-solid fa-chevron-right text-sm"></i>
+                </button>
+            </div>
+
+            <div class="bg-slate-50/70 dark:bg-slate-900/40 p-2 sm:p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80">
+                <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                    <span class="text-[13px] font-semibold text-rose-500">日</span>
+                    <span class="text-[13px] font-semibold text-slate-400">一</span>
+                    <span class="text-[13px] font-semibold text-slate-400">二</span>
+                    <span class="text-[13px] font-semibold text-slate-400">三</span>
+                    <span class="text-[13px] font-semibold text-slate-400">四</span>
+                    <span class="text-[13px] font-semibold text-slate-400">五</span>
+                    <span class="text-[13px] font-semibold text-sky-500">六</span>
+                </div>
+                <div id="calendar-days" class="grid grid-cols-7 gap-1"></div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-day text-sky-500 text-base"></i>
+                        <h3 id="cal-detail-date-title" class="font-bold text-sm">--</h3>
+                    </div>
+                    <span id="cal-detail-badge" class="px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full font-medium">已选择</span>
+                </div>
+
+                <div class="detail-switch" role="tablist">
+                    <button id="detail-tab-items" class="detail-tab active" onclick="switchDetailView('items')" role="tab" aria-selected="true"><i class="fa-solid fa-list-check"></i><span>当日事项</span></button>
+                    <button id="detail-tab-journal" class="detail-tab" onclick="switchDetailView('journal')" role="tab" aria-selected="false"><i class="fa-solid fa-note-sticky"></i><span>当日随记</span></button>
+                </div>
+
+                <div id="detail-panel-items" class="detail-panel">
+                    <button onclick="openAddItemModal()" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-md shadow-sky-500/20 active:scale-[0.98] transition-all">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>新增事项 / 附图记录</span>
+                    </button>
+                    <div class="space-y-2.5 pt-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center space-x-1">
+                                <i class="fa-solid fa-list-check text-sky-500"></i>
+                                <span>当日事项清单</span>
+                            </span>
+                            <span id="cal-detail-todo-count" class="text-xs text-slate-400 font-medium">0/0 项完成</span>
+                        </div>
+                        <div id="cal-detail-item-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <div id="detail-panel-journal" class="detail-panel hidden space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button onclick="openJournalModal()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-md shadow-amber-500/25 active:scale-[0.98] transition-all">
+                        <i class="fa-solid fa-feather-pointed"></i>
+                        <span>写一篇随记</span>
+                    </button>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center space-x-1">
+                            <i class="fa-solid fa-bookmark text-amber-500"></i>
+                            <span>本日已保存随记</span>
+                        </span>
+                        <span id="cal-journal-entry-count" class="text-xs text-slate-400 font-medium">0 条</span>
+                    </div>
+                    <div id="cal-journal-entries-list" class="space-y-2.5"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 时光轴 -->
+        <section id="tab-timeline" class="tab-content space-y-3">
+            <div class="flex items-end justify-between">
+                <div>
+                    <h2 class="text-xl font-bold">时光轴</h2>
+                    <p class="text-sm text-slate-400 mt-0.5">回看每一段随记</p>
+                </div>
+                <p id="timeline-count" class="text-xs text-slate-400 font-medium"></p>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                    <input type="text" id="timeline-search-input" oninput="renderTimeline()" placeholder="搜索随记、标签或日期…" class="w-full bg-transparent border-none outline-none text-sm">
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <select id="timeline-year-filter" onchange="renderTimeline()" class="bg-slate-100 dark:bg-slate-800 text-xs font-medium px-2.5 py-1.5 rounded-lg outline-none border border-slate-200 dark:border-slate-700">
+                        <option value="all">所有年份</option>
+                    </select>
+                    <select id="timeline-photo-filter" onchange="renderTimeline()" class="bg-slate-100 dark:bg-slate-800 text-xs font-medium px-2.5 py-1.5 rounded-lg outline-none border border-slate-200 dark:border-slate-700">
+                        <option value="all">全部</option>
+                        <option value="photoOnly">仅带图</option>
+                    </select>
+                    <select id="timeline-tag-filter" onchange="renderTimeline()" class="flex-1 min-w-[100px] bg-slate-100 dark:bg-slate-800 text-xs font-medium px-2.5 py-1.5 rounded-lg outline-none border border-slate-200 dark:border-slate-700">
+                        <option value="all">全部标签</option>
+                    </select>
+                    <button onclick="switchTab('settings'); renderTagManager()" class="text-xs text-sky-500 font-semibold whitespace-nowrap px-1.5"><i class="fa-solid fa-sliders mr-1"></i>标签</button>
+                </div>
+            </div>
+
+            <div id="timeline-container" class="moments-feed"></div>
+
+            <button onclick="goToToday(); switchTab('calendar');" class="fixed right-5 bottom-24 z-20 w-14 h-14 bg-sky-500 hover:bg-sky-600 text-white rounded-full shadow-lg shadow-sky-500/40 flex items-center justify-center text-xl active:scale-95 transition-transform">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+        </section>
+
+        <!-- 搜索 -->
+        <section id="tab-search" class="tab-content space-y-4">
+            <div>
+                <h2 class="font-bold text-xl">事项搜索与归档</h2>
+                <p class="text-sm text-slate-400 mt-1">按关键词、优先级和完成状态，查找历史事项</p>
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5">
+                <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                <input type="text" id="search-input" oninput="executeSearch()" placeholder="搜索事项标题、描述或日期…" class="w-full bg-transparent border-none outline-none text-sm">
+            </div>
+
+            <!-- 完成状态筛选 -->
+            <div>
+                <div class="text-[11px] font-semibold text-slate-400 mb-1.5 px-0.5">完成状态</div>
+                <div class="flex flex-wrap gap-1.5 text-xs">
+                    <button onclick="setSearchFilter('all')" id="sfilter-all" class="px-3.5 py-1.5 rounded-lg font-semibold bg-sky-500 text-white transition-all">全部</button>
+                    <button onclick="setSearchFilter('hasImage')" id="sfilter-hasImage" class="px-3.5 py-1.5 rounded-lg font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 transition-all flex items-center space-x-1">
+                        <i class="fa-regular fa-image text-purple-500"></i><span>含图</span>
+                    </button>
+                    <button onclick="setSearchFilter('pending')" id="sfilter-pending" class="px-3.5 py-1.5 rounded-lg font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 transition-all">未完成</button>
+                    <button onclick="setSearchFilter('completed')" id="sfilter-completed" class="px-3.5 py-1.5 rounded-lg font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 transition-all">已完成</button>
+                </div>
+            </div>
+
+            <!-- 优先级筛选 -->
+            <div>
+                <div class="text-[11px] font-semibold text-slate-400 mb-1.5 px-0.5">优先级</div>
+                <div class="flex flex-wrap gap-1.5">
+                    <button onclick="setPriorityFilter('all')" id="pfilter-all" class="pf-chip active">全部</button>
+                    <button onclick="setPriorityFilter('high')" id="pfilter-high" class="pf-chip pf-high"><i class="fa-solid fa-fire"></i>高</button>
+                    <button onclick="setPriorityFilter('medium')" id="pfilter-medium" class="pf-chip pf-medium"><i class="fa-solid fa-circle-half-stroke"></i>中</button>
+                    <button onclick="setPriorityFilter('low')" id="pfilter-low" class="pf-chip pf-low"><i class="fa-regular fa-circle"></i>普通</button>
+                </div>
+            </div>
+
+            <p id="archive-count" class="text-sm text-slate-400"></p>
+            <div id="search-results-list" class="space-y-2.5 pt-1">
+                <p class="text-center text-sm text-slate-400 py-8">输入关键字或筛选查看历史图文备忘...</p>
+            </div>
+        </section>
+
+        <!-- 设置 -->
+        <section id="tab-settings" class="tab-content space-y-4">
+            <h2 class="font-bold text-xl">数据备份与管理</h2>
+            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl space-y-2">
+                <div class="flex justify-between items-center text-sm font-medium">
+                    <span class="text-slate-600 dark:text-slate-400">LocalStorage 占用估算</span>
+                    <span id="storage-usage-text" class="text-sky-500 font-bold">0 KB</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                    <div id="storage-bar" class="bg-sky-500 h-full w-0 transition-all duration-300"></div>
+                </div>
+                <p class="text-xs text-slate-400">所有图片在添加时均已经过智能压缩，确保空间高利用率。</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 divide-y divide-slate-200/50 dark:divide-slate-800">
+                <div onclick="exportData()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-file-export text-sky-500 text-lg"></i>
+                        <div>
+                            <p class="text-sm font-semibold">导出 JSON 完整备份</p>
+                            <p class="text-xs text-slate-400 mt-0.5">备份所有事项、随记及压缩图文截图</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-sm text-slate-400"></i>
+                </div>
+                <label class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-file-import text-emerald-500 text-lg"></i>
+                        <div>
+                            <p class="text-sm font-semibold">导入 JSON 恢复数据</p>
+                            <p class="text-xs text-slate-400 mt-0.5">选择以前备份的 .json 文件进行恢复</p>
+                        </div>
+                    </div>
+                    <input type="file" accept=".json" onchange="importData(event)" class="hidden">
+                    <i class="fa-solid fa-chevron-right text-sm text-slate-400"></i>
+                </label>
+                <div onclick="clearAllData()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-rose-500/10 transition-colors text-rose-500">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-trash text-lg"></i>
+                        <div>
+                            <p class="text-sm font-semibold">清空本地所有事项数据</p>
+                            <p class="text-xs opacity-70 mt-0.5">清空所有备忘与图文记录，不可撤销</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-sm opacity-70"></i>
+                </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold">标签管理</p>
+                        <p class="text-xs text-slate-400 mt-1">统一修改或删除已使用的随记标签</p>
+                    </div>
+                    <i class="fa-solid fa-tags text-amber-500 text-lg"></i>
+                </div>
+                <div id="tag-manager-list" class="space-y-2"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 px-2 py-2 flex justify-around items-center z-30 pb-safe">
+        <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn active flex flex-col items-center justify-center space-y-1 text-sky-500 transition-colors">
+            <i class="fa-regular fa-calendar-days text-base"></i><span class="text-[10px] font-medium">月历/今日</span>
+        </button>
+        <button onclick="switchTab('timeline')" id="nav-timeline" class="nav-btn flex flex-col items-center justify-center space-y-1 text-slate-400 transition-colors">
+            <i class="fa-solid fa-clock-rotate-left text-base"></i><span class="text-[10px] font-medium">时光轴</span>
+        </button>
+        <button onclick="switchTab('search')" id="nav-search" class="nav-btn flex flex-col items-center justify-center space-y-1 text-slate-400 transition-colors">
+            <i class="fa-solid fa-magnifying-glass text-base"></i><span class="text-[10px] font-medium">搜索归档</span>
+        </button>
+        <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn flex flex-col items-center justify-center space-y-1 text-slate-400 transition-colors">
+            <i class="fa-solid fa-gear text-base"></i><span class="text-[10px] font-medium">数据备份</span>
+        </button>
+    </nav>
+
+    <!-- 随记编辑弹窗 -->
+    <div id="journal-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-auto rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                        <i class="fa-solid fa-feather-pointed text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 id="journal-modal-title" class="font-bold text-base leading-tight">写随记</h3>
+                        <p id="journal-modal-date" class="text-xs text-slate-400 mt-0.5">--</p>
+                    </div>
+                </div>
+                <button onclick="closeJournalModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-4 space-y-4 overflow-y-auto flex-1">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                        <i class="fa-solid fa-quote-left text-amber-500 mr-1"></i>正文
+                    </label>
+                    <textarea id="journal-modal-text" rows="6" placeholder="写点什么吧…（支持 Ctrl+Enter 保存，可粘贴截图）"
+                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-[15px] leading-relaxed placeholder-slate-400 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-400 outline-none transition-all resize-none"></textarea>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            <i class="fa-solid fa-tag text-amber-500 mr-1"></i>标签
+                        </label>
+                        <span class="text-xs text-slate-400">点选已有标签，或新建</span>
+                    </div>
+                    <div id="journal-modal-tags" class="flex flex-wrap gap-1.5 min-h-[36px] p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"></div>
+                    <div class="flex items-center gap-1.5 mt-2">
+                        <input id="journal-modal-new-tag" type="text" placeholder="新建标签，回车确认"
+                            class="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-amber-500"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();addJournalModalTag();}">
+                        <button type="button" onclick="addJournalModalTag()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            <i class="fa-regular fa-image text-purple-500 mr-1"></i>图片
+                        </label>
+                        <span id="journal-modal-img-count" class="text-xs text-slate-400 font-medium">0 张</span>
+                    </div>
+                    <label class="cursor-pointer flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-purple-400 hover:bg-purple-50/40 dark:hover:bg-purple-950/20 transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up text-purple-500 text-xl"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">点击上传或粘贴截图</p>
+                            <p class="text-xs text-slate-400">支持多张，自动压缩</p>
+                        </div>
+                        <input type="file" accept="image/*" multiple onchange="handleJournalModalImages(event)" class="hidden">
+                    </label>
+                    <div id="journal-modal-images" class="grid grid-cols-4 gap-2 mt-2"></div>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 bg-slate-50 dark:bg-slate-950/60">
+                <button type="button" onclick="closeJournalModal()" class="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors">取消</button>
+                <button type="button" id="journal-modal-save-btn" onclick="saveJournalFromModal()" class="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white py-3 rounded-xl text-sm font-bold shadow-md shadow-amber-500/25 active:scale-[0.98] transition-all">
+                    <i class="fa-solid fa-check mr-1"></i>保存随记
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 事项编辑弹窗 -->
+    <div id="item-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-auto rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
+                        <i class="fa-solid fa-list-check text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 id="item-modal-title" class="font-bold text-base leading-tight">新增事项</h3>
+                        <p id="item-modal-date" class="text-xs text-slate-400 mt-0.5">--</p>
+                    </div>
+                </div>
+                <button onclick="closeItemModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveItemModal(event)" class="p-4 space-y-4 overflow-y-auto flex-1">
+                <input type="hidden" id="modal-item-id">
+                <input type="hidden" id="modal-item-priority" value="medium">
+                <input type="hidden" id="modal-item-category" value="life">
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                        <i class="fa-solid fa-pen text-sky-500 mr-1"></i>事项名称 / 摘要 <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="modal-item-title" placeholder="例如：买这个款式的上衣 / 修复此报错 BUG" required
+                        class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-[15px] placeholder-slate-400 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-950/60 transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                        <i class="fa-solid fa-align-left text-slate-400 mr-1"></i>详细描述 / 备注
+                        <span class="text-xs font-normal text-slate-400 ml-1">可选</span>
+                    </label>
+                    <textarea id="modal-item-desc" rows="3" placeholder="补充一些细节，方便之后回顾…"
+                        class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-[15px] leading-relaxed placeholder-slate-400 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:focus:ring-sky-950/60 transition-all resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">
+                        <i class="fa-solid fa-flag text-rose-500 mr-1"></i>优先级
+                    </label>
+                    <div class="flex gap-2">
+                        <button type="button" data-prio="low" onclick="setItemPriority('low')" class="prio-seg">
+                            <i class="fa-regular fa-circle prio-icon"></i>
+                            <span>普通</span>
+                        </button>
+                        <button type="button" data-prio="medium" onclick="setItemPriority('medium')" class="prio-seg active">
+                            <i class="fa-solid fa-circle-half-stroke prio-icon"></i>
+                            <span>中等</span>
+                        </button>
+                        <button type="button" data-prio="high" onclick="setItemPriority('high')" class="prio-seg">
+                            <i class="fa-solid fa-fire prio-icon"></i>
+                            <span>高</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">
+                        <i class="fa-solid fa-folder text-amber-500 mr-1"></i>分类
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" data-cat="work" onclick="setItemCategory('work')" class="cat-chip">
+                            <i class="fa-solid fa-briefcase"></i><span>工作/学习</span>
+                        </button>
+                        <button type="button" data-cat="life" onclick="setItemCategory('life')" class="cat-chip active">
+                            <i class="fa-solid fa-house"></i><span>生活日常</span>
+                        </button>
+                        <button type="button" data-cat="shopping" onclick="setItemCategory('shopping')" class="cat-chip">
+                            <i class="fa-solid fa-cart-shopping"></i><span>购物需求</span>
+                        </button>
+                        <button type="button" data-cat="other" onclick="setItemCategory('other')" class="cat-chip">
+                            <i class="fa-solid fa-star"></i><span>其他</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            <i class="fa-regular fa-image text-purple-500 mr-1"></i>附加截图 / 图片
+                        </label>
+                        <span id="modal-photo-count-badge" class="text-xs text-slate-400 font-medium">已附 0 张</span>
+                    </div>
+                    <label class="cursor-pointer flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-purple-400 hover:bg-purple-50/40 dark:hover:bg-purple-950/20 transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up text-purple-500 text-xl"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">点击上传或粘贴截图</p>
+                            <p class="text-xs text-slate-400">支持多张，自动智能压缩</p>
+                        </div>
+                        <input type="file" accept="image/*" multiple onchange="handleModalImageUpload(event)" class="hidden">
+                    </label>
+                    <div id="modal-images-preview" class="grid grid-cols-4 gap-2 mt-2"></div>
+                </div>
+
+                <div class="pt-2 flex items-center gap-2">
+                    <button type="button" onclick="closeItemModal()" class="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors">取消</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-3 rounded-xl text-sm font-bold shadow-md shadow-sky-500/25 active:scale-[0.98] transition-all">
+                        <i class="fa-solid fa-check mr-1"></i>保存事项
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="lightbox-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col justify-between p-4" onclick="closeLightbox()">
+        <div class="flex justify-end items-center text-white pt-2 px-2">
+            <button onclick="closeLightbox()" class="text-white text-2xl p-2"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="flex-1 flex items-center justify-center p-2">
+            <img id="lightbox-img" src="" class="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl">
+        </div>
+        <div class="text-center text-white/60 text-sm pb-4">点击任意区域关闭</div>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'daily_item_tracker_data_v4';
+    let store = {};
+
+    let calendarSelectedDateObj = new Date();
+    let viewCalendarYear = calendarSelectedDateObj.getFullYear();
+    let viewCalendarMonth = calendarSelectedDateObj.getMonth();
+
+    let currentModalImages = [];
+    let currentSearchFilter = 'all';        // 完成状态筛选
+    let currentPriorityFilter = 'all';      // 优先级筛选（新增）
+
+    let journalModalImages = [];
+    let journalModalSelectedTag = null;
+    let journalModalEditingId = null;
+
+    let modalPriority = 'medium';
+    let modalCategory = 'life';
+
+    const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const WEEKDAYS_CN = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+
+    const PRIORITY_META = {
+        high:   { label: '高优先级', short: '高', icon: 'fa-fire', badgeClass: 'badge-prio-high', cardClass: 'prio-high' },
+        medium: { label: '中优先级', short: '中', icon: 'fa-circle-half-stroke', badgeClass: 'badge-prio-medium', cardClass: 'prio-medium' },
+        low:    { label: '普通',    short: '普通', icon: 'fa-circle', badgeClass: 'badge-prio-low', cardClass: 'prio-low' }
+    };
+    const CATEGORY_META = {
+        work:     { label: '工作/学习', icon: 'fa-briefcase' },
+        life:     { label: '生活日常', icon: 'fa-house' },
+        shopping: { label: '购物需求', icon: 'fa-cart-shopping' },
+        other:    { label: '其他',    icon: 'fa-star' }
+    };
+
+    window.onload = function() {
+        loadStoreFromLocalStorage();
+        switchDetailView(localStorage.getItem('daily_detail_view') || 'items');
+        initTheme();
+        updateHeaderDate();
+        populateYearOptions();
+        refreshJournalTagOptions();
+        renderTagManager();
+        renderCalendar();
+        renderCalendarDetailSection();
+        calculateStorageUsage();
+
+        window.addEventListener('paste', handleGlobalPaste);
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                if (!document.getElementById('journal-modal').classList.contains('hidden')) closeJournalModal();
+                if (!document.getElementById('item-modal').classList.contains('hidden')) closeItemModal();
+                if (!document.getElementById('lightbox-modal').classList.contains('hidden')) closeLightbox();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                if (!document.getElementById('journal-modal').classList.contains('hidden')) {
+                    e.preventDefault();
+                    saveJournalFromModal();
+                } else if (!document.getElementById('item-modal').classList.contains('hidden')) {
+                    e.preventDefault();
+                    saveItemModal();
+                }
+            }
+        });
+    };
+
+    // ================= 工具 =================
+    function formatDateKey(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    function formatDisplayDate(date) {
+        return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日 ${WEEKDAYS_CN[date.getDay()]}`;
+    }
+    function getTodayKey() { return formatDateKey(new Date()); }
+
+    function formatTimeAgo(dateKey, createdAtISO) {
+        let target;
+        if (createdAtISO) target = new Date(createdAtISO);
+        else { const p = dateKey.split('-'); target = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); }
+        if (isNaN(target.getTime())) return '';
+        const now = new Date();
+        const diff = now - target;
+        const min = Math.floor(diff / 60000);
+        const hour = Math.floor(diff / 3600000);
+        const day = Math.floor(diff / 86400000);
+        if (diff < 0) return '刚刚';
+        if (min < 1) return '刚刚';
+        if (min < 60) return `${min}分钟前`;
+        if (hour < 24) return `${hour}小时前`;
+        if (day < 7) return `${day}天前`;
+        return `${target.getFullYear()}年${target.getMonth()+1}月${target.getDate()}日`;
+    }
+
+    function escapeHtml(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+    function escapeAttr(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, "&amp;").replace(/'/g, "&#39;").replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function copyText(text, successMessage = '已复制') {
+        if (!text || !String(text).trim()) { alert('没有可复制的内容'); return; }
+        const value = String(text);
+        const fallback = () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = value;
+            textarea.style.position = 'fixed'; textarea.style.top = '0'; textarea.style.left = '0';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus(); textarea.select();
+            try { document.execCommand('copy'); alert(successMessage); }
+            catch (err) { alert('复制失败，请长按手动选择文本'); }
+            textarea.remove();
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(value).then(() => alert(successMessage)).catch(fallback);
+        } else fallback();
+    }
+
+    // ================= 数据层 =================
+    function loadStoreFromLocalStorage() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) store = JSON.parse(data);
+        } catch (e) { console.error(e); store = {}; }
+        Object.keys(store).forEach(key => migrateDayData(store[key], key));
+    }
+
+    function migrateDayData(day, dateKey) {
+        if (!day) return;
+        if (!Array.isArray(day.journals)) {
+            day.journals = day.journal && day.journal.trim()
+                ? [{ id: 'legacy_' + dateKey, text: day.journal.trim(), tag: '', images: [], createdAt: new Date(dateKey).toISOString() }]
+                : [];
+        }
+        day.journals.forEach(e => { if (!Array.isArray(e.images)) e.images = []; });
+        if (Array.isArray(day.journalImages) && day.journalImages.length > 0) {
+            if (day.journals.length === 0) {
+                day.journals.push({ id: 'media_' + dateKey, text: '', tag: '', images: day.journalImages.slice(), createdAt: new Date(dateKey).toISOString() });
+            } else {
+                day.journals[0].images = (day.journals[0].images || []).concat(day.journalImages);
+            }
+            day.journalImages = [];
+        }
+    }
+
+    function saveStoreToLocalStorage() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+            try { calculateStorageUsage(); } catch(e) {}
+            return true;
+        } catch (e) {
+            console.error(e);
+            alert("存储失败：请先导出备份，再清理图片释放空间。");
+            return false;
+        }
+    }
+
+    function getDayData(dateKey) {
+        if (!store[dateKey]) store[dateKey] = { todos: [], journal: "", journals: [], journalImages: [] };
+        migrateDayData(store[dateKey], dateKey);
+        return store[dateKey];
+    }
+
+    function getJournalEntries(day) {
+        if (Array.isArray(day.journals)) return day.journals;
+        return [];
+    }
+
+    function getAllJournalTags() {
+        return [...new Set(
+            Object.values(store).flatMap(day => getJournalEntries(day).map(e => (e.tag || '').trim()).filter(Boolean))
+        )].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+    }
+
+    // ================= 主题/头部 =================
+    function initTheme() {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else document.documentElement.classList.remove('dark');
+    }
+    function toggleTheme() {
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.theme = 'light';
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.theme = 'dark';
+        }
+    }
+    function updateHeaderDate() {
+        const now = new Date();
+        document.getElementById('header-date').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+    }
+
+    // ================= 年月 =================
+    function populateYearOptions() {
+        const select = document.getElementById('year-select');
+        select.innerHTML = '';
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+            const opt = document.createElement('option');
+            opt.value = y; opt.innerText = `${y}年`;
+            if (y === viewCalendarYear) opt.selected = true;
+            select.appendChild(opt);
+        }
+    }
+    function handleYearSelect(val) { viewCalendarYear = parseInt(val); renderCalendar(); }
+
+    function goToToday() {
+        calendarSelectedDateObj = new Date();
+        viewCalendarYear = calendarSelectedDateObj.getFullYear();
+        viewCalendarMonth = calendarSelectedDateObj.getMonth();
+        populateYearOptions();
+        switchTab('calendar');
+        renderCalendar();
+        renderCalendarDetailSection();
+    }
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => {
+            el.classList.remove('text-sky-500');
+            el.classList.add('text-slate-400');
+        });
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        const btn = document.getElementById(`nav-${tabName}`);
+        if (btn) { btn.classList.remove('text-slate-400'); btn.classList.add('text-sky-500'); }
+
+        if (tabName === 'calendar') {
+            populateYearOptions(); renderCalendar(); renderCalendarDetailSection();
+        } else if (tabName === 'timeline') {
+            populateTimelineYearFilter(); renderTimeline();
+        } else if (tabName === 'search') {
+            executeSearch();
+        } else if (tabName === 'settings') {
+            calculateStorageUsage();
+        }
+    }
+
+    function changeMonth(delta) {
+        viewCalendarMonth += delta;
+        if (viewCalendarMonth < 0) { viewCalendarMonth = 11; viewCalendarYear--; }
+        else if (viewCalendarMonth > 11) { viewCalendarMonth = 0; viewCalendarYear++; }
+        populateYearOptions();
+        renderCalendar();
+    }
+
+    // ================= 标签 =================
+    function refreshJournalTagOptions() {
+        const filter = document.getElementById('timeline-tag-filter');
+        if (filter) {
+            const tags = getAllJournalTags();
+            const current = filter.value || 'all';
+            filter.innerHTML = `<option value="all">全部标签</option>` + tags.map(t => `<option value="${escapeAttr(t)}">#${escapeHtml(t)}</option>`).join('');
+            filter.value = tags.includes(current) ? current : 'all';
+        }
+        renderTagManager();
+    }
+
+    function renderTagManager() {
+        const box = document.getElementById('tag-manager-list'); if (!box) return;
+        const tags = getAllJournalTags();
+        box.innerHTML = tags.length
+            ? tags.map(tag => `
+                <div class="flex items-center justify-between gap-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2">
+                    <span class="text-sm text-amber-700 dark:text-amber-300 font-medium">#${escapeHtml(tag)}</span>
+                    <span class="flex gap-1">
+                        <button onclick="renameJournalTag('${escapeAttr(tag)}')" class="text-xs text-sky-500 px-2.5 py-1.5 rounded-lg font-medium"><i class="fa-regular fa-pen-to-square mr-1"></i>修改</button>
+                        <button onclick="deleteJournalTag('${escapeAttr(tag)}')" class="text-xs text-rose-500 px-2.5 py-1.5 rounded-lg font-medium"><i class="fa-regular fa-trash-can mr-1"></i>删除</button>
+                    </span>
+                </div>
+            `).join('')
+            : '<p class="text-xs text-slate-400 text-center py-2">还没有已使用的标签</p>';
+    }
+
+    function renameJournalTag(oldTag) {
+        const next = prompt(`将标签“${oldTag}”修改为：`, oldTag);
+        if (next === null) return;
+        const value = next.trim();
+        if (!value) return alert('标签不能为空');
+        Object.values(store).forEach(day => getJournalEntries(day).forEach(e => {
+            if ((e.tag || '') === oldTag) e.tag = value;
+        }));
+        saveStoreToLocalStorage(); refreshJournalTagOptions(); renderTimeline();
+        if (!document.getElementById('detail-panel-journal').classList.contains('hidden')) renderCalendarJournalEntries();
+    }
+
+    function deleteJournalTag(tag) {
+        if (!confirm(`删除标签“${tag}”？对应随记内容会保留，但标签会被移除。`)) return;
+        Object.values(store).forEach(day => getJournalEntries(day).forEach(e => {
+            if ((e.tag || '') === tag) e.tag = '';
+        }));
+        saveStoreToLocalStorage(); refreshJournalTagOptions(); renderTimeline();
+        if (!document.getElementById('detail-panel-journal').classList.contains('hidden')) renderCalendarJournalEntries();
+    }
+
+    // ================= 图片压缩 =================
+    function compressImage(file, maxWidth = 800, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ================= 全局粘贴 =================
+    async function handleGlobalPaste(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        const itemModal = document.getElementById('item-modal');
+        const journalModal = document.getElementById('journal-modal');
+        for (const item of items) {
+            if (item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                if (blob) {
+                    try {
+                        const base64 = await compressImage(blob);
+                        if (!itemModal.classList.contains('hidden')) {
+                            currentModalImages.push({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2,5), data: base64 });
+                            renderModalImagePreviews();
+                        } else if (!journalModal.classList.contains('hidden')) {
+                            journalModalImages.push({ id: 'jimg_' + Date.now() + '_' + Math.random().toString(36).slice(2,5), data: base64 });
+                            renderJournalModalImages();
+                        }
+                    } catch (err) { console.error(err); }
+                }
+            }
+        }
+    }
+
+    // ================= 日历渲染 =================
+    function renderCalendar() {
+        const label = document.getElementById('calendar-month-label');
+        label.innerText = `${viewCalendarMonth + 1}月`;
+        const grid = document.getElementById('calendar-days');
+        grid.innerHTML = '';
+
+        const firstDay = new Date(viewCalendarYear, viewCalendarMonth, 1);
+        const daysInMonth = new Date(viewCalendarYear, viewCalendarMonth + 1, 0).getDate();
+        const startDay = firstDay.getDay();
+
+        for (let i = 0; i < startDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'cal-cell is-empty';
+            grid.appendChild(empty);
+        }
+
+        const todayStr = getTodayKey();
+        const activeStr = formatDateKey(calendarSelectedDateObj);
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = formatDateKey(new Date(viewCalendarYear, viewCalendarMonth, day));
+            const dayData = store[dateKey];
+
+            let todos = [], entries = [], totalImages = 0;
+            if (dayData) {
+                todos = dayData.todos || [];
+                entries = getJournalEntries(dayData);
+                const todoImgCount = todos.reduce((a, t) => a + (t.images ? t.images.length : 0), 0);
+                const journalImgCount = entries.reduce((a, e) => a + ((e.images || []).length), 0);
+                totalImages = todoImgCount + journalImgCount;
+            }
+
+            const hasTodos = todos.length > 0;
+            const hasJournals = entries.length > 0;
+            const isToday = (dateKey === todayStr);
+            const isSelected = (dateKey === activeStr);
+
+            let bottomHtml = '';
+
+            if (hasTodos) {
+                const todoTotal = todos.length;
+                const todoDone = todos.filter(t => t.completed).length;
+                const percent = todoTotal > 0 ? Math.round((todoDone / todoTotal) * 100) : 0;
+                const allDone = todoDone === todoTotal && todoTotal > 0;
+                const hasHighPending = todos.some(t => t.priority === 'high' && !t.completed);
+                bottomHtml += `<div class="cal-todo-bar"><span class="${allDone ? 'all-done' : ''}" style="width:${percent}%;${hasHighPending && !allDone ? 'background:#f43f5e;' : ''}"></span></div>`;
+            }
+
+            if (hasJournals) {
+                const firstEntry = entries.find(e => (e.text || '').trim() || e.tag) || entries[0];
+                let preview = '';
+                if (firstEntry) {
+                    if (firstEntry.tag) preview = '#' + firstEntry.tag;
+                    else if (firstEntry.text) preview = firstEntry.text.trim().substring(0, 5);
+                }
+                if (!preview) preview = '随记';
+                if (entries.length > 1) preview += ` ·${entries.length}`;
+                bottomHtml += `
+                    <div class="cal-journal-chip ${entries.length > 1 ? 'multi' : ''}">
+                        <span class="chip-dot"></span>
+                        <span class="chip-text">${escapeHtml(preview)}</span>
+                    </div>
+                `;
+            }
+
+            const cell = document.createElement('div');
+            cell.className = `cal-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}`;
+            cell.innerHTML = `
+                <div class="cal-cell-top">
+                    <span class="cal-day-num">${day}</span>
+                    ${totalImages > 0 ? `<span class="cal-img-badge">📷${totalImages}</span>` : ''}
+                </div>
+                <div class="cal-cell-bottom">${bottomHtml}</div>
+            `;
+            cell.onclick = () => {
+                calendarSelectedDateObj = new Date(viewCalendarYear, viewCalendarMonth, day);
+                renderCalendar();
+                renderCalendarDetailSection();
+            };
+            grid.appendChild(cell);
+        }
+    }
+
+    // ================= 详情面板 =================
+    function switchDetailView(view) {
+        const items = view === 'items';
+        document.getElementById('detail-panel-items').classList.toggle('hidden', !items);
+        document.getElementById('detail-panel-journal').classList.toggle('hidden', items);
+        document.getElementById('detail-tab-items').classList.toggle('active', items);
+        document.getElementById('detail-tab-journal').classList.toggle('active', !items);
+        document.getElementById('detail-tab-items').setAttribute('aria-selected', String(items));
+        document.getElementById('detail-tab-journal').setAttribute('aria-selected', String(!items));
+        localStorage.setItem('daily_detail_view', view);
+    }
+
+    function renderCalendarDetailSection() {
+        const key = formatDateKey(calendarSelectedDateObj);
+        const dayData = getDayData(key);
+
+        document.getElementById('cal-detail-date-title').innerText = formatDisplayDate(calendarSelectedDateObj);
+
+        const badge = document.getElementById('cal-detail-badge');
+        if (key === getTodayKey()) {
+            badge.innerText = '今天';
+            badge.className = 'px-2.5 py-1 text-xs bg-sky-500 text-white rounded-full font-medium';
+        } else {
+            badge.innerText = '已选择';
+            badge.className = 'px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full font-medium';
+        }
+
+        renderItemList(dayData.todos);
+        renderCalendarJournalEntries();
+    }
+
+    // ================= 事项列表 =================
+    function renderItemList(todos) {
+        const container = document.getElementById('cal-detail-item-list');
+        const countLabel = document.getElementById('cal-detail-todo-count');
+        const completedCount = todos.filter(t => t.completed).length;
+        countLabel.innerText = `${completedCount}/${todos.length} 项完成`;
+
+        if (todos.length === 0) {
+            container.innerHTML = `<p class="text-sm text-slate-400 py-4 text-center">当前日期无事项记录，点击上方按钮新增</p>`;
+            return;
+        }
+
+        container.innerHTML = todos.map(todo => {
+            const prioMeta = PRIORITY_META[todo.priority] || PRIORITY_META.medium;
+            const catMeta = CATEGORY_META[todo.category] || CATEGORY_META.other;
+
+            let priorityBadge = '';
+            if (todo.priority === 'high') priorityBadge = `<span class="badge badge-prio-high"><i class="fa-solid fa-fire"></i>高优先级</span>`;
+            else if (todo.priority === 'low') priorityBadge = `<span class="badge badge-prio-low">普通</span>`;
+
+            let imagesHtml = '';
+            if (todo.images && todo.images.length > 0) {
+                imagesHtml = `<div class="grid grid-cols-4 gap-1.5 mt-2">${todo.images.map(img => `<img src="${img.data}" onclick="openLightbox('${img.data}')" class="w-full h-16 object-cover rounded-lg cursor-pointer border border-slate-200 dark:border-slate-800">`).join('')}</div>`;
+            }
+
+            return `
+                <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 space-y-1">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-start space-x-2.5 flex-1 min-w-0">
+                            <button onclick="toggleTodoStatus('${todo.id}')" class="mt-0.5 w-5 h-5 rounded border ${todo.completed ? 'bg-sky-500 border-sky-500 text-white' : 'border-slate-300 dark:border-slate-700'} flex items-center justify-center shrink-0">
+                                ${todo.completed ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                            </button>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                    <span class="text-[15px] font-semibold ${todo.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${escapeHtml(todo.title)}</span>
+                                    ${priorityBadge}
+                                    <span class="text-[11px] px-2 py-0.5 bg-slate-200/60 dark:bg-slate-800 text-slate-500 rounded font-medium"><i class="fa-solid ${catMeta.icon} text-[9px] mr-0.5"></i>${catMeta.label.split('/')[0]}</span>
+                                </div>
+                                ${todo.desc ? `<p class="text-[13.5px] text-slate-500 dark:text-slate-400 mt-1 whitespace-pre-line leading-relaxed">${escapeHtml(todo.desc)}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <button onclick="editItem('${todo.id}')" class="text-slate-400 hover:text-sky-500 p-1.5 text-sm"><i class="fa-regular fa-pen-to-square"></i></button>
+                            <button onclick="deleteItem('${todo.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 text-sm"><i class="fa-regular fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    ${imagesHtml}
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ================= 本日随记列表 =================
+    function renderCalendarJournalEntries() {
+        const container = document.getElementById('cal-journal-entries-list');
+        if (!container) return;
+
+        const day = getDayData(formatDateKey(calendarSelectedDateObj));
+        const entries = getJournalEntries(day);
+        const countLabel = document.getElementById('cal-journal-entry-count');
+        if (countLabel) countLabel.innerText = `${entries.length} 条`;
+
+        if (entries.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-6 space-y-1 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                    <i class="fa-regular fa-note-sticky text-2xl text-slate-300 dark:text-slate-700"></i>
+                    <p class="text-sm text-slate-400">这一天还没有随记</p>
+                </div>
+            `;
+            return;
+        }
+
+        const key = formatDateKey(calendarSelectedDateObj);
+        container.innerHTML = entries.map(e => {
+            let imagesHtml = '';
+            if (e.images && e.images.length > 0) {
+                imagesHtml = `<div class="grid grid-cols-3 gap-1.5 mt-2">${e.images.map(img => `<img src="${img.data}" onclick="openLightbox('${img.data}')" class="w-full h-20 object-cover rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-90 transition-opacity">`).join('')}</div>`;
+            }
+            return `
+                <div class="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-100 dark:border-amber-900/40">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                            ${e.tag ? `<span class="inline-flex px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-semibold mb-1.5">#${escapeHtml(e.tag)}</span>` : ''}
+                            ${e.text ? `<p class="text-[15px] text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line break-words">${escapeHtml(e.text)}</p>` : ''}
+                            ${imagesHtml}
+                        </div>
+                        <div class="flex items-center gap-0.5 shrink-0">
+                            <button onclick="copyDayJournalEntry('${key}', '${e.id}')" class="text-slate-400 hover:text-sky-500 p-1.5 text-sm" title="复制文字"><i class="fa-regular fa-copy"></i></button>
+                            <button onclick="openEditJournalModal('${e.id}')" class="text-slate-400 hover:text-sky-500 p-1.5 text-sm" title="编辑"><i class="fa-regular fa-pen-to-square"></i></button>
+                            <button onclick="deleteJournalEntry('${key}', '${e.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 text-sm" title="删除"><i class="fa-regular fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function copyDayJournalEntry(dateKey, entryId) {
+        const day = getDayData(dateKey);
+        const entry = getJournalEntries(day).find(e => e.id === entryId);
+        if (!entry) return;
+        if (entry.text && entry.text.trim()) copyText(entry.text.trim(), '随记内容已复制');
+        else alert('这条随记没有文字内容');
+    }
+
+    // ================= 随记弹窗 =================
+    function openJournalModal() {
+        journalModalEditingId = null;
+        journalModalImages = [];
+        journalModalSelectedTag = null;
+        document.getElementById('journal-modal-title').innerText = '写随记';
+        document.getElementById('journal-modal-date').innerText = formatDisplayDate(calendarSelectedDateObj);
+        document.getElementById('journal-modal-text').value = '';
+        document.getElementById('journal-modal-new-tag').value = '';
+        document.getElementById('journal-modal-save-btn').innerHTML = '<i class="fa-solid fa-check mr-1"></i>保存随记';
+        renderJournalModalTags();
+        renderJournalModalImages();
+        document.getElementById('journal-modal').classList.remove('hidden');
+        setTimeout(() => document.getElementById('journal-modal-text').focus(), 100);
+    }
+
+    function openEditJournalModal(entryId) {
+        const day = getDayData(formatDateKey(calendarSelectedDateObj));
+        const entry = getJournalEntries(day).find(e => e.id === entryId);
+        if (!entry) return;
+        journalModalEditingId = entryId;
+        journalModalImages = (entry.images || []).map(img => ({ ...img }));
+        journalModalSelectedTag = (entry.tag || '').trim() || null;
+        document.getElementById('journal-modal-title').innerText = '编辑随记';
+        document.getElementById('journal-modal-date').innerText = formatDisplayDate(calendarSelectedDateObj);
+        document.getElementById('journal-modal-text').value = entry.text || '';
+        document.getElementById('journal-modal-new-tag').value = '';
+        document.getElementById('journal-modal-save-btn').innerHTML = '<i class="fa-solid fa-check mr-1"></i>更新随记';
+        renderJournalModalTags();
+        renderJournalModalImages();
+        document.getElementById('journal-modal').classList.remove('hidden');
+        setTimeout(() => document.getElementById('journal-modal-text').focus(), 100);
+    }
+
+    function closeJournalModal() {
+        document.getElementById('journal-modal').classList.add('hidden');
+        journalModalImages = [];
+        journalModalSelectedTag = null;
+        journalModalEditingId = null;
+    }
+
+    function renderJournalModalTags() {
+        const container = document.getElementById('journal-modal-tags');
+        if (!container) return;
+        const tags = getAllJournalTags();
+        if (journalModalSelectedTag && !tags.includes(journalModalSelectedTag)) {
+            tags.push(journalModalSelectedTag);
+            tags.sort((a, b) => a.localeCompare(b, 'zh-CN'));
+        }
+        if (tags.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-400 italic leading-7">暂无标签，在下方输入框创建第一个</span>';
+            return;
+        }
+        container.innerHTML = tags.map(tag => {
+            const active = journalModalSelectedTag === tag;
+            return `<button type="button" onclick="toggleJournalModalTag('${escapeAttr(tag)}')"
+                class="px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${active
+                    ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300/60'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-amber-900/20'}">
+                #${escapeHtml(tag)}
+            </button>`;
+        }).join('');
+    }
+
+    function toggleJournalModalTag(tag) {
+        journalModalSelectedTag = (journalModalSelectedTag === tag) ? null : tag;
+        renderJournalModalTags();
+    }
+
+    function addJournalModalTag() {
+        const input = document.getElementById('journal-modal-new-tag');
+        const value = input.value.trim();
+        if (!value) { input.focus(); return; }
+        journalModalSelectedTag = value;
+        input.value = '';
+        renderJournalModalTags();
+    }
+
+    function renderJournalModalImages() {
+        const container = document.getElementById('journal-modal-images');
+        const count = document.getElementById('journal-modal-img-count');
+        if (!container) return;
+        count.innerText = `${journalModalImages.length} 张`;
+        container.innerHTML = journalModalImages.map((img, i) => `
+            <div class="relative group aspect-square">
+                <img src="${img.data}" onclick="openLightbox('${img.data}')" class="w-full h-full object-cover rounded-xl cursor-pointer border border-slate-200 dark:border-slate-800">
+                <button type="button" onclick="removeJournalModalImage(${i})" class="absolute top-1 right-1 bg-black/70 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-90 hover:opacity-100">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function removeJournalModalImage(i) { journalModalImages.splice(i, 1); renderJournalModalImages(); }
+
+    async function handleJournalModalImages(e) {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+        for (const file of files) {
+            try {
+                const base64 = await compressImage(file);
+                journalModalImages.push({ id: 'jimg_' + Date.now() + '_' + Math.random().toString(36).slice(2,5), data: base64 });
+            } catch (err) { console.error(err); }
+        }
+        renderJournalModalImages();
+        e.target.value = '';
+    }
+
+    function saveJournalFromModal() {
+        const text = document.getElementById('journal-modal-text').value.trim();
+        const tag = (journalModalSelectedTag || '').trim();
+        if (!text && !tag && journalModalImages.length === 0) {
+            alert('写点什么，或者加个标签、图片吧');
+            return;
+        }
+        const day = getDayData(formatDateKey(calendarSelectedDateObj));
+        if (journalModalEditingId) {
+            const entry = getJournalEntries(day).find(e => e.id === journalModalEditingId);
+            if (entry) { entry.text = text; entry.tag = tag; entry.images = journalModalImages.slice(); }
+        } else {
+            day.journals.push({
+                id: 'j_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                text, tag,
+                images: journalModalImages.slice(),
+                createdAt: new Date().toISOString()
+            });
+        }
+        day.journal = day.journals.map(e => e.text).filter(Boolean).join('\n\n');
+        saveStoreToLocalStorage();
+        refreshJournalTagOptions();
+        closeJournalModal();
+        renderCalendar();
+        renderCalendarJournalEntries();
+        renderTimeline();
+    }
+
+    function deleteJournalEntry(dateKey, entryId) {
+        if (!confirm('确认删除这条随记吗？')) return;
+        const day = getDayData(dateKey);
+        day.journals = getJournalEntries(day).filter(e => e.id !== entryId);
+        day.journal = day.journals.map(e => e.text).filter(Boolean).join('\n\n');
+        saveStoreToLocalStorage();
+        refreshJournalTagOptions();
+        renderTimeline();
+        renderCalendar();
+        if (dateKey === formatDateKey(calendarSelectedDateObj)) renderCalendarJournalEntries();
+    }
+
+    // ================= 事项：优先级 & 分类 =================
+    function setItemPriority(p) {
+        modalPriority = p;
+        document.getElementById('modal-item-priority').value = p;
+        document.querySelectorAll('.prio-seg').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.prio === p);
+        });
+    }
+
+    function setItemCategory(c) {
+        modalCategory = c;
+        document.getElementById('modal-item-category').value = c;
+        document.querySelectorAll('.cat-chip').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.cat === c);
+        });
+    }
+
+    // ================= 事项逻辑 =================
+    function openAddItemModal(editTodo = null) {
+        currentModalImages = [];
+        const modal = document.getElementById('item-modal');
+
+        document.getElementById('item-modal-date').innerText = formatDisplayDate(calendarSelectedDateObj);
+
+        if (editTodo) {
+            document.getElementById('item-modal-title').innerText = '编辑事项';
+            document.getElementById('modal-item-id').value = editTodo.id;
+            document.getElementById('modal-item-title').value = editTodo.title;
+            document.getElementById('modal-item-desc').value = editTodo.desc || '';
+            currentModalImages = editTodo.images ? [...editTodo.images] : [];
+            setItemPriority(editTodo.priority || 'medium');
+            setItemCategory(editTodo.category || 'life');
+        } else {
+            document.getElementById('item-modal-title').innerText = '新增事项';
+            document.getElementById('modal-item-id').value = '';
+            document.getElementById('modal-item-title').value = '';
+            document.getElementById('modal-item-desc').value = '';
+            setItemPriority('medium');
+            setItemCategory('life');
+        }
+        renderModalImagePreviews();
+        modal.classList.remove('hidden');
+        setTimeout(() => document.getElementById('modal-item-title').focus(), 150);
+    }
+
+    function closeItemModal() { document.getElementById('item-modal').classList.add('hidden'); }
+
+    function saveItemModal(e) {
+        if (e) e.preventDefault();
+        try {
+            const id = document.getElementById('modal-item-id').value;
+            const titleEl = document.getElementById('modal-item-title');
+            const title = titleEl.value.trim();
+            if (!title) { titleEl.focus(); return false; }
+            const desc = document.getElementById('modal-item-desc').value.trim();
+            const priority = modalPriority;
+            const category = modalCategory;
+            const dayData = getDayData(formatDateKey(calendarSelectedDateObj));
+            if (id) {
+                const todo = dayData.todos.find(t => t.id === id);
+                if (!todo) throw new Error('找不到要编辑的事项');
+                Object.assign(todo, { title, desc, priority, category, images: [...currentModalImages] });
+            } else {
+                dayData.todos.push({ id:'todo_' + Date.now() + '_' + Math.random().toString(36).slice(2,6), title, desc, priority, category, completed:false, images:[...currentModalImages] });
+            }
+            saveStoreToLocalStorage();
+            closeItemModal();
+            renderCalendar();
+            renderCalendarDetailSection();
+            switchDetailView('items');
+            return false;
+        } catch (err) {
+            console.error(err);
+            alert('保存事项失败，请重试。');
+            return false;
+        }
+    }
+
+    function toggleTodoStatus(todoId) {
+        const dayData = getDayData(formatDateKey(calendarSelectedDateObj));
+        const todo = dayData.todos.find(t => t.id === todoId);
+        if (todo) {
+            todo.completed = !todo.completed;
+            saveStoreToLocalStorage();
+            renderCalendar();
+            renderCalendarDetailSection();
+        }
+    }
+
+    function editItem(todoId) {
+        const dayData = getDayData(formatDateKey(calendarSelectedDateObj));
+        const todo = dayData.todos.find(t => t.id === todoId);
+        if (todo) openAddItemModal(todo);
+    }
+
+    function deleteItem(todoId) {
+        if (!confirm('确认删除此事项及附图？')) return;
+        const dayData = getDayData(formatDateKey(calendarSelectedDateObj));
+        dayData.todos = dayData.todos.filter(t => t.id !== todoId);
+        saveStoreToLocalStorage();
+        renderCalendar();
+        renderCalendarDetailSection();
+    }
+
+    async function handleModalImageUpload(e) {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+        for (const file of files) {
+            try {
+                const base64 = await compressImage(file);
+                currentModalImages.push({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2,5), data: base64 });
+            } catch (err) { console.error(err); }
+        }
+        renderModalImagePreviews();
+        e.target.value = '';
+    }
+
+    function renderModalImagePreviews() {
+        const container = document.getElementById('modal-images-preview');
+        const badge = document.getElementById('modal-photo-count-badge');
+        badge.innerText = `已附 ${currentModalImages.length} 张`;
+        container.innerHTML = currentModalImages.map((p, i) => `
+            <div class="relative group aspect-square">
+                <img src="${p.data}" onclick="openLightbox('${p.data}')" class="w-full h-full object-cover rounded-xl cursor-pointer border border-slate-200 dark:border-slate-800">
+                <button type="button" onclick="removeModalImage(${i})" class="absolute top-1 right-1 bg-black/70 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function removeModalImage(i) { currentModalImages.splice(i, 1); renderModalImagePreviews(); }
+
+    // ================= 时光轴 =================
+    function populateTimelineYearFilter() {
+        const select = document.getElementById('timeline-year-filter');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="all">所有年份</option>';
+        const years = new Set();
+        Object.keys(store).forEach(key => {
+            const day = store[key];
+            const hasContent = getJournalEntries(day).length > 0;
+            if (!hasContent) return;
+            const year = key.split('-')[0];
+            if (year) years.add(year);
+        });
+        Array.from(years).sort((a, b) => b - a).forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y; opt.innerText = `${y}年`;
+            select.appendChild(opt);
+        });
+        select.value = [...select.options].some(o => o.value === currentVal) ? currentVal : 'all';
+    }
+
+    function renderTimeline() {
+        const container = document.getElementById('timeline-container');
+        const searchInput = document.getElementById('timeline-search-input').value.trim().toLowerCase();
+        const yearFilter = document.getElementById('timeline-year-filter').value;
+        const photoFilter = document.getElementById('timeline-photo-filter').value;
+        const tagFilter = document.getElementById('timeline-tag-filter')?.value || 'all';
+
+        const dates = Object.keys(store).flatMap(dateKey => {
+            const day = store[dateKey];
+            const entries = getJournalEntries(day);
+            if (yearFilter !== 'all' && !dateKey.startsWith(yearFilter)) return [];
+            return entries.filter(e => {
+                const hasImg = (e.images || []).length > 0;
+                if (photoFilter === 'photoOnly' && !hasImg) return false;
+                if (tagFilter !== 'all' && e.tag !== tagFilter) return false;
+                if (searchInput && !(e.text || '').toLowerCase().includes(searchInput)
+                    && !(e.tag || '').toLowerCase().includes(searchInput)
+                    && !dateKey.includes(searchInput)) return false;
+                return true;
+            }).map(e => ({ dateKey, entry: e }));
+        }).sort((a, b) => (b.dateKey + (b.entry.createdAt || '')).localeCompare(a.dateKey + (a.entry.createdAt || '')));
+
+        document.getElementById('timeline-count').textContent = dates.length ? `${dates.length} 篇 · 最新在前` : '';
+
+        if (dates.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-12 space-y-2">
+                    <i class="fa-regular fa-note-sticky text-4xl text-slate-300 dark:text-slate-700"></i>
+                    <p class="text-sm text-slate-400">还没有符合条件的随记</p>
+                    <button onclick="goToToday(); switchTab('calendar');" class="text-sm text-sky-500 hover:underline font-medium">点击写一篇记录</button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = dates.map(({ dateKey, entry }) => {
+            const parts = dateKey.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const dayNum = parseInt(parts[2]);
+            const dObj = new Date(year, month - 1, dayNum);
+            const weekday = WEEKDAYS_CN[dObj.getDay()];
+
+            const avatarHtml = `
+                <div class="moments-avatar">
+                    <span class="m-month">${MONTHS_EN[month-1]}</span>
+                    <span class="m-day">${String(dayNum).padStart(2,'0')}</span>
+                </div>
+            `;
+
+            const tagHtml = entry.tag ? `<div class="moments-tag">#${escapeHtml(entry.tag)}</div>` : '';
+            const textHtml = (entry.text && entry.text.trim())
+                ? `<p class="moments-text">${escapeHtml(entry.text)}</p>` : '';
+
+            let imagesHtml = '';
+            const imgs = entry.images || [];
+            if (imgs.length > 0) {
+                let colClass = 'col-1';
+                if (imgs.length === 2) colClass = 'col-2';
+                else if (imgs.length >= 3) colClass = 'col-3';
+                imagesHtml = `<div class="moments-imgs ${colClass}">${
+                    imgs.map(img => `<img src="${img.data}" onclick="openLightbox('${img.data}')" alt="">`).join('')
+                }</div>`;
+            }
+
+            const copyBtn = (entry.text && entry.text.trim())
+                ? `<button onclick="copyTimelineEntry('${dateKey}', '${entry.id}')" title="复制文字"><i class="fa-regular fa-copy"></i></button>`
+                : '';
+            const editBtn = `<button onclick="jumpToDateAndEdit('${dateKey}', '${entry.id}')" title="编辑"><i class="fa-regular fa-pen-to-square"></i></button>`;
+            const delBtn = `<button class="btn-del" onclick="deleteJournalEntry('${dateKey}', '${entry.id}')" title="删除"><i class="fa-regular fa-trash-can"></i></button>`;
+
+            const timeText = formatTimeAgo(dateKey, entry.createdAt);
+
+            return `
+                <div class="moments-item flex gap-3">
+                    ${avatarHtml}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline gap-2 flex-wrap">
+                            <span class="moments-name">${year}年${month}月${dayNum}日</span>
+                            <span class="text-xs text-slate-400">${weekday}</span>
+                        </div>
+                        ${tagHtml}
+                        ${textHtml}
+                        ${imagesHtml}
+                        <div class="moments-foot">
+                            <span>${timeText}</span>
+                            <div class="moments-actions">
+                                ${copyBtn}
+                                ${editBtn}
+                                ${delBtn}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function copyTimelineEntry(dateKey, entryId) {
+        const day = getDayData(dateKey);
+        const entry = getJournalEntries(day).find(e => e.id === entryId);
+        if (!entry) return;
+        const parts = [];
+        if (entry.tag) parts.push('#' + entry.tag);
+        if (entry.text) parts.push(entry.text.trim());
+        const content = parts.join('\n');
+        if (!content) { alert('这条随记没有文字内容'); return; }
+        copyText(content, '随记内容已复制');
+    }
+
+    function jumpToDateAndEdit(dateKey, entryId) {
+        const parts = dateKey.split('-');
+        calendarSelectedDateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        viewCalendarYear = calendarSelectedDateObj.getFullYear();
+        viewCalendarMonth = calendarSelectedDateObj.getMonth();
+        switchTab('calendar');
+        renderCalendar();
+        renderCalendarDetailSection();
+        switchDetailView('journal');
+        setTimeout(() => openEditJournalModal(entryId), 100);
+    }
+
+    // ================= 搜索 =================
+    function setSearchFilter(type) {
+        currentSearchFilter = type;
+        ['all', 'hasImage', 'pending', 'completed'].forEach(t => {
+            const btn = document.getElementById(`sfilter-${t}`);
+            if (t === type) btn.className = "px-3.5 py-1.5 rounded-lg font-semibold bg-sky-500 text-white transition-all";
+            else btn.className = "px-3.5 py-1.5 rounded-lg font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 transition-all";
+        });
+        executeSearch();
+    }
+
+    // 优先级筛选（新增）
+    function setPriorityFilter(p) {
+        currentPriorityFilter = p;
+        const map = { all: 'pfilter-all', high: 'pfilter-high', medium: 'pfilter-medium', low: 'pfilter-low' };
+        Object.keys(map).forEach(k => {
+            const btn = document.getElementById(map[k]);
+            if (!btn) return;
+            btn.classList.toggle('active', k === p);
+        });
+        executeSearch();
+    }
+
+    function executeSearch() {
+        const container = document.getElementById('search-results-list');
+        const q = document.getElementById('search-input').value.trim().toLowerCase();
+        let matched = [];
+
+        Object.keys(store).forEach(dateKey => {
+            const day = store[dateKey];
+            (day.todos || []).forEach(t => {
+                // 关键词匹配
+                const matchQ = !q || String(t.title || '').toLowerCase().includes(q)
+                    || dateKey.includes(q)
+                    || (t.desc && t.desc.toLowerCase().includes(q));
+
+                // 完成状态筛选
+                let matchF = true;
+                if (currentSearchFilter === 'hasImage') matchF = (t.images && t.images.length > 0);
+                else if (currentSearchFilter === 'pending') matchF = !t.completed;
+                else if (currentSearchFilter === 'completed') matchF = t.completed;
+
+                // 优先级筛选（新增）
+                let matchP = true;
+                if (currentPriorityFilter !== 'all') matchP = (t.priority || 'medium') === currentPriorityFilter;
+
+                if (matchQ && matchF && matchP) {
+                    matched.push({ dateKey, todo: t, priority: t.priority || 'medium' });
+                }
+            });
+        });
+
+        // 排序：先按日期倒序，同日期内高优先级在前
+        const prioOrder = { high: 0, medium: 1, low: 2 };
+        matched.sort((a, b) => {
+            if (a.dateKey !== b.dateKey) return b.dateKey.localeCompare(a.dateKey);
+            return (prioOrder[a.priority] ?? 1) - (prioOrder[b.priority] ?? 1);
+        });
+
+        // 统计数量
+        const highCount = matched.filter(m => m.priority === 'high').length;
+        const pendingCount = matched.filter(m => !m.todo.completed).length;
+        document.getElementById('archive-count').innerHTML =
+            `找到 <span class="text-sky-500 font-bold">${matched.length}</span> 条事项`
+            + (highCount > 0 ? ` · <span class="text-rose-500 font-semibold">${highCount} 条高优先级</span>` : '')
+            + (pendingCount > 0 ? ` · ${pendingCount} 条未完成` : '');
+
+        if (matched.length === 0) {
+            container.innerHTML = `<p class="text-center text-sm text-slate-400 py-8">暂无匹配事项，试试其他关键词或筛选条件</p>`;
+            return;
+        }
+
+        container.innerHTML = matched.map(item => {
+            const t = item.todo;
+            const prioKey = t.priority || 'medium';
+            const prioMeta = PRIORITY_META[prioKey] || PRIORITY_META.medium;
+            const catMeta = CATEGORY_META[t.category] || CATEGORY_META.other;
+
+            // 优先级徽章（普通优先级不显示徽章，减少视觉噪音）
+            let priorityBadgeHtml = '';
+            if (prioKey === 'high') {
+                priorityBadgeHtml = `<span class="badge badge-prio-high"><i class="fa-solid fa-fire"></i>高优先级</span>`;
+            } else if (prioKey === 'medium') {
+                priorityBadgeHtml = `<span class="badge badge-prio-medium"><i class="fa-solid fa-circle-half-stroke"></i>中等</span>`;
+            } else {
+                priorityBadgeHtml = `<span class="badge badge-prio-low"><i class="fa-regular fa-circle"></i>普通</span>`;
+            }
+
+            // 完成状态徽章
+            const statusBadgeHtml = t.completed
+                ? `<span class="badge" style="background:#d1fae5;color:#059669;"><i class="fa-solid fa-check"></i>已完成</span>`
+                : `<span class="badge" style="background:#fef3c7;color:#b45309;"><i class="fa-regular fa-clock"></i>未完成</span>`;
+
+            let imagesHtml = '';
+            if (t.images && t.images.length > 0) {
+                imagesHtml = `<div class="grid grid-cols-4 gap-1.5 mt-2">${t.images.map(img => `<img src="${img.data}" onclick="openLightbox('${img.data}')" class="w-full h-16 object-cover rounded-lg cursor-pointer border border-slate-200 dark:border-slate-800">`).join('')}</div>`;
+            }
+
+            return `
+                <div class="result-card ${prioMeta.cardClass}">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-sky-500 font-bold flex items-center gap-1">
+                            <i class="fa-regular fa-calendar"></i>${item.dateKey}
+                        </span>
+                        <button onclick="jumpToDate('${item.dateKey}')" class="text-xs text-slate-400 hover:text-sky-500 font-medium flex items-center gap-0.5">
+                            定位 <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center flex-wrap gap-1.5 mb-1.5">
+                        ${priorityBadgeHtml}
+                        ${statusBadgeHtml}
+                        <span class="badge badge-cat"><i class="fa-solid ${catMeta.icon}"></i>${catMeta.label}</span>
+                    </div>
+
+                    <p class="text-[15px] font-semibold leading-snug ${t.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">${escapeHtml(t.title)}</p>
+                    ${t.desc ? `<p class="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed mt-1 whitespace-pre-line">${escapeHtml(t.desc)}</p>` : ''}
+                    ${imagesHtml}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function jumpToDate(dateKey) {
+        const parts = dateKey.split('-');
+        calendarSelectedDateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        viewCalendarYear = calendarSelectedDateObj.getFullYear();
+        viewCalendarMonth = calendarSelectedDateObj.getMonth();
+        switchTab('calendar');
+    }
+
+    // ================= 灯箱 =================
+    function openLightbox(src) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox-modal').classList.remove('hidden');
+    }
+    function closeLightbox() { document.getElementById('lightbox-modal').classList.add('hidden'); }
+
+    // ================= 存储 & 备份 =================
+    function calculateStorageUsage() {
+        const str = JSON.stringify(store);
+        const bytes = new Blob([str]).size;
+        const kb = (bytes / 1024).toFixed(1);
+        document.getElementById('storage-usage-text').innerText = `${kb} KB`;
+        const percent = Math.min(100, Math.round((bytes / (5 * 1024 * 1024)) * 100));
+        document.getElementById('storage-bar').style.width = `${percent}%`;
+    }
+
+    function exportData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(store));
+        const a = document.createElement('a');
+        a.setAttribute("href", dataStr);
+        a.setAttribute("download", `daily_tracker_backup_${getTodayKey()}.json`);
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (typeof imported === 'object') {
+                    store = imported;
+                    Object.keys(store).forEach(k => migrateDayData(store[k], k));
+                    saveStoreToLocalStorage();
+                    renderCalendar();
+                    renderCalendarDetailSection();
+                    refreshJournalTagOptions();
+                    alert('数据导入成功！');
+                }
+            } catch (err) { alert('导入失败，备份文件格式无效。'); }
+        };
+        reader.readAsText(file);
+    }
+
+    function clearAllData() {
+        if (confirm('确定要清空所有备忘与图文记录吗？此操作不可恢复！')) {
+            store = {};
+            saveStoreToLocalStorage();
+            renderCalendar();
+            renderCalendarDetailSection();
+            refreshJournalTagOptions();
+            alert('本地数据已清空。');
+        }
+    }
+</script>
+</body>
+</html>
